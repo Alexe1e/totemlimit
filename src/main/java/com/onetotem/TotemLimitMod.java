@@ -1,9 +1,13 @@
 package com.onetotem;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import net.minecraft.core.NonNullList;
@@ -32,8 +36,11 @@ public class TotemLimitMod implements ModInitializer {
 	private static final int MAX_TOTEMS = 1;
 	private static final int CHECK_INTERVAL = 10; // ticks (10 = 0.5 s)
 
+	/** True if the Server Backpacks mod is installed. */
+	private static boolean backpacksLoaded = false;
+
 	/** Counts how many totems may still be kept and how many were deleted. */
-	private static final class Budget {
+	static final class Budget {
 		int remaining = MAX_TOTEMS;
 		int deleted = 0;
 
@@ -48,6 +55,7 @@ public class TotemLimitMod implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		backpacksLoaded = FabricLoader.getInstance().isModLoaded("serverbackpacks");
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			if (server.getTickCount() % CHECK_INTERVAL != 0) {
 				return;
@@ -56,7 +64,7 @@ public class TotemLimitMod implements ModInitializer {
 				enforceLimit(player);
 			}
 		});
-		LOGGER.info("Totem Limit loaded: max {} totem(s) per player, extras are deleted", MAX_TOTEMS);
+		LOGGER.info("Totem Limit loaded: max {} totem(s) per player, extras are deleted (Server Backpacks support: {})", MAX_TOTEMS, backpacksLoaded);
 	}
 
 	private static void enforceLimit(ServerPlayer player) {
@@ -83,14 +91,30 @@ public class TotemLimitMod implements ModInitializer {
 			if (stack.isEmpty()) {
 				continue;
 			}
-			cleanContainerContents(stack, budget);
-			cleanBundleContents(stack, budget);
+			cleanNested(stack, budget);
+		}
+
+		// Pass 3: totems inside Server Backpacks (only if that mod is installed)
+		if (backpacksLoaded) {
+			Set<UUID> seen = new HashSet<>();
+			for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+				ItemStack stack = inventory.getItem(slot);
+				if (!stack.isEmpty()) {
+					BackpackSupport.clean(stack, budget, seen);
+				}
+			}
 		}
 
 		if (budget.deleted > 0) {
 			player.sendSystemMessage(Component.literal(
 					"Du darfst nur " + MAX_TOTEMS + " Totem besitzen. Überzählige wurden gelöscht."));
 		}
+	}
+
+	/** Cleans shulker-box-like containers and bundles stored in the given stack. */
+	static void cleanNested(ItemStack stack, Budget budget) {
+		cleanContainerContents(stack, budget);
+		cleanBundleContents(stack, budget);
 	}
 
 	private static void cleanContainerContents(ItemStack stack, Budget budget) {

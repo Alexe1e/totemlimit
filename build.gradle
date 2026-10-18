@@ -26,6 +26,9 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Server Backpacks (optional at runtime), only needed to compile the backpack support
+	compileOnly files('libs/serverbackpacks.jar')
 }
 
 processResources {
