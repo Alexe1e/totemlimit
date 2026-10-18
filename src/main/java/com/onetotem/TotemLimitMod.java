@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Server-side mod: every player may carry at most ONE Totem of Undying in the
  * inventory (hotbar, main inventory, armor and offhand slots). Extra totems are
- * dropped in front of the player.
+ * dropped next to the player.
  */
 public class TotemLimitMod implements ModInitializer {
 	public static final String MOD_ID = "totemlimit";
@@ -64,10 +64,14 @@ public class TotemLimitMod implements ModInitializer {
 				} else {
 					stack.setCount(keep);
 				}
-				ItemEntity entity = player.drop(toDrop, false);
-				if (entity != null) {
-					entity.setPickUpDelay(100);
-				}
+				ItemEntity entity = new ItemEntity(
+						player.level(),
+						player.getX(),
+						player.getY() + 1.0,
+						player.getZ(),
+						toDrop);
+				entity.setPickUpDelay(100);
+				player.level().addFreshEntity(entity);
 				droppedAny = true;
 			}
 		}
