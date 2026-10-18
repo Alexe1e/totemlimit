@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ItemContainerContents;
@@ -125,22 +126,24 @@ public class TotemLimitMod implements ModInitializer {
 		if (contents == null) {
 			return;
 		}
-		List<ItemStack> items = new ArrayList<>();
+		List<ItemStackTemplate> items = new ArrayList<>();
 		boolean changed = false;
-		for (ItemStack inner : contents.items()) {
-			ItemStack copy = inner.copy();
-			if (!copy.isEmpty() && copy.is(Items.TOTEM_OF_UNDYING)) {
-				int keep = budget.take(copy.getCount());
+		for (ItemStackTemplate template : contents.items()) {
+			ItemStack inner = template.create();
+			if (!inner.isEmpty() && inner.is(Items.TOTEM_OF_UNDYING)) {
+				int keep = budget.take(inner.getCount());
 				if (keep == 0) {
 					changed = true;
 					continue;
 				}
-				if (keep < copy.getCount()) {
-					copy.setCount(keep);
+				if (keep < inner.getCount()) {
+					inner.setCount(keep);
+					items.add(ItemStackTemplate.fromNonEmptyStack(inner));
 					changed = true;
+					continue;
 				}
 			}
-			items.add(copy);
+			items.add(template);
 		}
 		if (changed) {
 			stack.set(DataComponents.BUNDLE_CONTENTS, new BundleContents(items));
