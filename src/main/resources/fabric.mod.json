@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "totemlimit",
+	"version": "${version}",
+	"name": "Totem Limit",
+	"description": "Limits every player to one Totem of Undying in the inventory (server-side).",
+	"authors": [
+		"Server Admin"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/totemlimit/icon.png",
+	"environment": "server",
+	"entrypoints": {
+		"main": [
+			"com.onetotem.TotemLimitMod"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
